@@ -1,0 +1,69 @@
+#Paquetes y librerias
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("SummarizedExperiment", version = "3.8")
+library(tidyverse)
+library(stringr)
+library(SummarizedExperiment)
+
+###EXTRACCION DE DATOS
+
+##Extracción de ## COLDATA
+#Leemos las lineas de comentarios.
+primeras_lineas = readLines("mirtop.gff", n = 3)
+#Capturamos la linea con el texto "COLDATA"
+coldata <- grep("COLDATA",primeras_lineas, value = TRUE)
+#Eliminamos el texto superfluo
+coldata2<-coldata %>% str_replace("## COLDATA: ","")
+#Separamos los distintos elementos
+coldata3<-str_split(coldata2, ",")
+
+##Extracción de COLDATA (opcional) de metadata.csv
+#Cargamos el archivo de metadatos
+md_raw <- read_csv("metadata.csv")
+samplename <- md_raw %>% pull(samplename)
+
+##Extracción de GFF
+#seqname | source | feature | start | end | score | strand | frame | attribute
+#Leemos GFF eliminando los comentarios y cambiando los nombres de las columnas.
+resultado<- as_tibble(read_tsv("mirtop.gff", col_names = c("seqname","source","feature","start","end","score","strand","frame","attribute"), comment = "#"))
+##Extracción de los valores de "ATRIBUTE"
+#Read | UID | Name | Parent | Variant | Cigar | Expression
+#Seleccionamos la columna "attribute" y almaceamos sus valores
+as_tibble(expresion <-resultado %>% 
+            select(attribute))
+#Separamos los distintos valores de la linea de "attribute" en sus diferentes tipos
+expresion2<-expresion %>% separate(attribute, c("Read","UID","Name","Parent","Variant","Cigar","Expression","Filter","Hits"))
+
+#Extraccion de UID y Expression
+#Tomamos los valores de UID
+as_tibble(uid <-expresion2 %>% 
+            select(UID))
+#Tomamos los valores de expression
+as_tibble(expre <-expresion2 %>% 
+            select(Expression))
+
+#Construccion de la matriz
+rowRanges <- GRanges(, IRanges())
+matrix1<- SummarizedExperiment(rowRanges = uid,colData=expre)
+
+
+#################EMPLEANDO R-BASE
+#Cargamos el archivo de metadatos
+md <- read.csv(file="metadata.csv", header=TRUE, sep=",")
+#Cargaos el archivo GFF
+gff <- read.table('mirtop.gff', sep="\t", quote="")
+#Dividimos la columna 9 en subcolumnas
+col9<-str_split_fixed(gff$V9, ";", 9)
+#Cambiamos los nombres de la columna 9
+colnames(col9, do.NULL = FALSE)
+#Nombres:Read UID Name Parent Variant Cigar Filter Hits Expression
+colnames(col9) <- c("Read","UID","Name","Parent","Variant","Cigar","Expression","Filter","Hits")
+#Subdividimos la columna Expression en los números que la componen
+exp<-str_split_fixed(col9df$Expression, ",", 4)
+exp_df <- data.frame(exp)
+#Eliminamos el texto de los numeros
+exp2<-gsub("[a-zA-Z ]", "", exp[,1])
+exp[,1]<-exp2
+#Añadimos los nombres como columnas
+colnames(exp) = md[,1 ] 
