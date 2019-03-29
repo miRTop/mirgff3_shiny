@@ -84,4 +84,4 @@ gff_objects<-function(gff){
 
 #Creamos la clase SummarizedExperiment
 #??
-sum_Experiemnt1<-makeSummarizedExperimentFromExpressionSet(gff_objects)
+sum_Experiemnt1<-makeSummarizedExperimentFromExpressionSet(gff_objects())
