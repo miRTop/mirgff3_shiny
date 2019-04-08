@@ -8,10 +8,7 @@ library(stringr)
 library(SummarizedExperiment)
 library(purrrlyr)
 
-
-###EXTRACCION DE DATOS
-
-####EXTRACCION DE DATOS
+####EXTRACCION DE DATOS DESDE FICHEROS GFF Y CSV
 
 ##Función general de lectura de GFF
 #seqname | source | feature | start | end | score | strand | frame | attribute
@@ -38,7 +35,10 @@ coldata_extract_csv <- function(csv){
   md_raw <- read.csv(csv, row.names = 1)
   return(md_raw)
 }
-##Extracción de la columna ATRIBUTOS/ROWDATA
+
+###PROCESAMIENTO DE DATOS A PARTIR DE LO EXTRAIDO DE LOS FICHEROS
+
+##Extracción de la columna TTRIBUTE y creación de ROWDATA
 atributes_extract<-function(gff){
   #Leemos el archivo GFF
   datos1<-lecturaGFF(gff)
@@ -53,8 +53,6 @@ atributes_extract<-function(gff){
     separate(attribute, sep = " ", into = c("att", "value")) %>% # separate the values into two columns (UID | iso-22-LVMJ3KW9)
     spread(att, value) %>% # move name of the attributes to be columns
     select(-uid) # remove temporal ID
-  
-  # expresion2<-datos1 %>% separate(attribute, c("Read","UID","Name","Parent","Variant","Cigar","Expression","Filter","Hits"), sep = ";")
   return (gff_table)
 }
 
@@ -76,7 +74,7 @@ atributes_extract<-function(gff){
   as.matrix()
   }
 
-
+###ASIGNACIÓN Y CREACION DE VARIABLES
 gff = "test/mirtop.gff"
 metadata = "test/metadata.csv"
 colnames<- coldata_extract(gff)
@@ -98,19 +96,6 @@ sum_Experiemnt<-SummarizedExperiment(assays = list(raw = counts),
 
 # Make function to PCA
 # see DEGreport::degPCA()
-
-
-##PRUEBA
-#Cargamos los archivos necesarios
-# coldataGFF = ERR187525-mirbase-ready ERR187844-mirbase-ready ERR187497-mirbase-ready ERR187773-mirbase-ready
-coldataGFF<-coldata_extract("test/mirtop.gff")
-# coldataGFF2 = ERR187525-mirbase-ready ERR187844-mirbase-ready ERR187497-mirbase-ready ERR187773-mirbase-ready
-coldataGFF2<-coldata_extract_csv("test/metadata.csv")
-#rowdata1 = seqname | source | feature | start | end | score | strand | frame | ATTRIBUTE
-#                                                 Read | UID | Name | Parent | Variant | Cigar | Expression | Filter | Hits                        
-rowdata1<-atributes_extract("test/mirtop.gff")
-#counts1 = UID - Expression
-counts1<-counts_extract("test/mirtop.gff",coldataGFF)
 
 #Aplicación de SummarizedExperiment
 sum_Experiment<-SummarizedExperiment(assays = list(raw = counts1),colData = coldataGFF2,rowData = rowdata1)
