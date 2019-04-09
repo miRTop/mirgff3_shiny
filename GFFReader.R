@@ -8,10 +8,7 @@ library(stringr)
 library(SummarizedExperiment)
 library(purrrlyr)
 
-
-###EXTRACCION DE DATOS
-
-####EXTRACCION DE DATOS
+####EXTRACCION DE DATOS DESDE FICHEROS GFF Y CSV
 
 ##Función general de lectura de GFF
 #seqname | source | feature | start | end | score | strand | frame | attribute
@@ -38,7 +35,10 @@ coldata_extract_csv <- function(csv){
   md_raw <- read.csv(csv, row.names = 1)
   return(md_raw)
 }
-##Extracción de la columna ATRIBUTOS/ROWDATA
+
+###PROCESAMIENTO DE DATOS A PARTIR DE LO EXTRAIDO DE LOS FICHEROS
+
+##Extracción de la columna TTRIBUTE y creación de ROWDATA
 atributes_extract<-function(gff){
   #Leemos el archivo GFF
   datos1<-lecturaGFF(gff)
@@ -53,8 +53,6 @@ atributes_extract<-function(gff){
     separate(attribute, sep = " ", into = c("att", "value")) %>% # separate the values into two columns (UID | iso-22-LVMJ3KW9)
     spread(att, value) %>% # move name of the attributes to be columns
     select(-uid) # remove temporal ID
-  
-  # expresion2<-datos1 %>% separate(attribute, c("Read","UID","Name","Parent","Variant","Cigar","Expression","Filter","Hits"), sep = ";")
   return (gff_table)
 }
 
@@ -68,15 +66,15 @@ atributes_extract<-function(gff){
     #Transformamos el dibble en matriz
     # uid_exp2<-as.matrix(uid_exp)
     # return(uid_exp)
-    select(c(UID, Expression)) %>% 
-  separate(Expression, sep=",", into = colnames, convert = TRUE) %>% 
-  distinct()  %>%  # no duplicados
-  as.data.frame() %>% # because tibble doesn't have row.names
-  column_to_rownames("UID") %>%
-  as.matrix()
+        select(c(UID, Expression)) %>% 
+        separate(Expression, sep=",", into = colnames, convert = TRUE) %>% 
+        distinct()  %>%  # no duplicados
+        as.data.frame() %>% # because tibble doesn't have row.names
+        column_to_rownames("UID") %>%
+        as.matrix()
   }
 
-
+###ASIGNACIÓN Y CREACION DE VARIABLES
 gff = "test/mirtop.gff"
 metadata = "test/metadata.csv"
 colnames<- coldata_extract(gff)
