@@ -83,15 +83,23 @@ counts<-counts_extract(gff, colnames)
 metadata<-coldata_extract_csv(metadata)
 
 #Aplicación de SummarizedExperiment
-se<-SummarizedExperiment(assays = list(raw = counts),colData = metadata, rowData = attributes)
+se<-SummarizedExperiment(assays = list(raw = counts),
+                         colData = metadata,
+                         rowData = attributes)
 dds<- DESeqDataSetFromMatrix(counts, metadata, design = ~1)
-vst <- varianceStabilizingTransformation(dds)
+vst <- varianceStabilizingTransformation(dds) # log2 scale
 assays(se)[["vst"]] = assay(vst)
-
+head(assays(se)[["vst"]])
 
 # Make function to PCA
-# see DEGreport::degPCA()
+# http://lpantano.github.io/DEGreport/reference/degPCA.html
+# see DEGreport::degPCA(se) #PCA
 
+# http://lpantano.github.io/DEGreport/reference/degPlot.html
+## xs = column of colData(se)
+## slot = "vst"
+## log2 = FALSE
+# see DEGreport::degPlot(se) # plot of specific isomirs
 
 ## EXTRA CODIGO
 #Cargamos los archivos necesarios
