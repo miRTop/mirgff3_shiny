@@ -64,10 +64,10 @@ atributes_extract<-function(gff){
     datos1<-atributes_extract(gff)
     #Seleccionamos las variables UID y Expression
     as_tibble(uid_exp <-datos1 %>% 
-                select(c(UID,Expression)))
+                select(c(UID,Expression))) %>% 
     #Transformamos el dibble en matriz
-    uid_exp2<-as.matrix(uid_exp)
-    return(uid_exp)
+    # uid_exp2<-as.matrix(uid_exp)
+    # return(uid_exp)
     select(c(UID, Expression)) %>% 
   separate(Expression, sep=",", into = colnames, convert = TRUE) %>% 
   distinct()  %>%  # no duplicados
@@ -83,24 +83,19 @@ colnames<- coldata_extract(gff)
 attributes<-atributes_extract(gff)
 counts<-counts_extract(gff, colnames)
 metadata<-coldata_extract_csv(metadata)
-#Creamos la clase SummarizedExperiment
-#??
-sum_Experiemnt<-SummarizedExperiment(assays = list(raw = counts),
-                                     colData = metadata,
-                                     rowData = attributes)
 
+#Aplicación de SummarizedExperiment
+se<-SummarizedExperiment(assays = list(raw = counts),colData = metadata, rowData = attributes)
+dds<- DESeqDataSetFromMatrix(counts, metadata, design = ~1)
+vst <- varianceStabilizingTransformation(dds)
+assays(se)[["vst"]] = assay(vst)
 
-# Make function to normalize with DESeq2
-# see dds <- DESeq2::DESeqDataSetFromMatrix(counts, metadata, design=~1)
-# see vst <- DESeq2::varianceStabilizingTransformation(dds)
-# add new normalized count data to new slot in the object 
-## sum_Experiemnt@assays[["vst"]] <- assay(vst)
 
 # Make function to PCA
 # see DEGreport::degPCA()
 
 
-##PRUEBA
+## EXTRA CODIGO
 #Cargamos los archivos necesarios
 # coldataGFF = ERR187525-mirbase-ready ERR187844-mirbase-ready ERR187497-mirbase-ready ERR187773-mirbase-ready
 coldataGFF<-coldata_extract("test/mirtop.gff")
