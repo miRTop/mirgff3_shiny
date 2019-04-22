@@ -82,14 +82,33 @@ attributes<-atributes_extract(gff)
 counts<-counts_extract(gff, colnames)
 metadata<-coldata_extract_csv(metadata)
 
+
 #Aplicación de SummarizedExperiment
 se<-SummarizedExperiment(assays = list(raw = counts),
                          colData = metadata,
                          rowData = attributes)
+
+#Alamcenamos ls valore siniciales y finales del análisis de expresión diferencial.
 dds<- DESeqDataSetFromMatrix(counts, metadata, design = ~1)
-vst <- varianceStabilizingTransformation(dds) # log2 scale
+
+#Calculamos los valores de dispersión.
+dds <- estimateSizeFactors(dds)
+
+#Normalización de los parámetros.
+vst <- varianceStabilizingTransformation(dds)
+
+#Creamos el assay "vst" dentro del objeto SummarizedExperiment.
 assays(se)[["vst"]] = assay(vst)
-head(assays(se)[["vst"]])
+
+#Dibujamos el plot de los 12 primeros isomeros de datos crudos.
+degPlot(dds,genes = rownames(dds)[1:12], xs = "group",log2 = FALSE)
+
+#Dibujamos el plot de los 12 primeros isomeros de datos normalizados.
+degPlot(vst,genes = rownames(vst)[1:12], xs = "group",log2 = FALSE)
+
+#Realizamos la PCA coloreando las observacionen según al grupo que pertenecen.
+degPCA(counts, metadata = metadata, condition = "group", data = FALSE)
+
 
 # Make function to PCA
 # http://lpantano.github.io/DEGreport/reference/degPCA.html
@@ -100,45 +119,3 @@ head(assays(se)[["vst"]])
 ## slot = "vst"
 ## log2 = FALSE
 # see DEGreport::degPlot(se) # plot of specific isomirs
-
-## EXTRA CODIGO
-#Cargamos los archivos necesarios
-# coldataGFF = ERR187525-mirbase-ready ERR187844-mirbase-ready ERR187497-mirbase-ready ERR187773-mirbase-ready
-coldataGFF<-coldata_extract("test/mirtop.gff")
-# coldataGFF2 = ERR187525-mirbase-ready ERR187844-mirbase-ready ERR187497-mirbase-ready ERR187773-mirbase-ready
-coldataGFF2<-coldata_extract_csv("test/metadata.csv")
-#rowdata1 = seqname | source | feature | start | end | score | strand | frame | ATTRIBUTE
-#                                                 Read | UID | Name | Parent | Variant | Cigar | Expression | Filter | Hits                        
-rowdata1<-atributes_extract("test/mirtop.gff")
-#counts1 = UID - Expression
-counts1<-counts_extract("test/mirtop.gff",coldataGFF)
-
-#Aplicación de SummarizedExperiment
-sum_Experiment<-SummarizedExperiment(assays = list(raw = counts1),colData = coldataGFF2,rowData = rowdata1)
-
-#Error in all_dims[, 1L] : número incorreto de dimensiones
-
-dds<- DESeqDataSetFromMatrix(countData = counts1, colData = coldataGFF2, design = ~1)
-#He intentado aplicar esta función pero no acabo de ver como hacerlo. Es necesatrio que el numero de columnas de count1 (UID, Expression) sean igual al numero
-#de lineas de coldataGFF2 (ERR187525-mirbase-ready, ERR187844-mirbase-ready, ERR187497-mirbase-ready, ERR187773-mirbase-ready).
-#No se si te refieres al numero en Expression con respecto a los valores de coldataGFF2
-#Por si es eso:
-#Eliminamos el valor UID
-counts2<-counts1[,-1]
-#Lo convertimos en un data frame para trabajar con el.
-counts3 <- as.data.frame(counts2)
-#Dividimos los valores de la columna de Expression y creamos una columna por cada gupo de valores
-valor <- strsplit(as.character(counts3$Expression), ",")
-counts3$col1 <- sapply(valor, `[`, 1)
-counts3$col2 <- sapply(valor, `[`, 2)
-counts3$col3 <- sapply(valor, `[`, 3)
-counts3$col4 <- sapply(valor, `[`, 4)
-#Eliminamos la columna de expression
-counts4<-counts3[,-1]
-#Cambiamos los nombres de las columnas por los valores de metadata
-colnames(counts4)<- coldataGFF
-#Cambiamos el tipo de dato de character a numerico
-counts4[] <- lapply(counts4, function(x) as.numeric(as.character(x)))
-#Aplicamos el DESeqDataSetFromMatrix
-dds<- DESeqDataSetFromMatrix(countData = counts4, colData = coldataGFF2, design = ~1)
-vst <- DESeq2::varianceStabilizingTransformation(dds)
