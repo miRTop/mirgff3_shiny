@@ -21,6 +21,17 @@ shinyServer(function(input, output) {
     resultado<- as_tibble(read_tsv(gff, col_names = c("seqname","source","feature","start","end","score","strand","frame","attribute"), comment = "#"))
     return (resultado)
   } 
+  coldata_extract <- function(gff_coldata) {
+    #Leemos las lineas de comentarios.
+    primeras_lineas = readLines(gff_coldata, n = 3)
+     #Capturamos la linea con el texto "COLDATA"
+   coldata <- grep("COLDATA",primeras_lineas, value = TRUE)
+    #Eliminamos el texto superfluo
+    coldata2<-coldata %>% str_replace("## COLDATA: ","")
+    #Separamos los distintos elementos
+    coldata3<-unlist(str_split(coldata2, ","))
+  return(coldata3)
+}
   #Extracción de COLDATA
   coldata_extract_csv <- function(csv){
     md_raw <- read.csv(csv, row.names = 1)
