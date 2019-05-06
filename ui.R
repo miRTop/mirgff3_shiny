@@ -17,12 +17,12 @@ shinyUI(fluidPage(
     sidebarPanel(
       #Menú para cargar el arhivo GFF y CSV.
       fileInput("file1", "Choose CSV File",
-                multiple = FALSE,
+                multiple = FALSE,placeholder = "test/metadata.csv",
                 accept = c("text/csv",
                            "text/comma-separated-values,text/plain",
                            ".csv")),
       fileInput("file2", "Choose GFF File",
-                multiple = FALSE,
+                multiple = FALSE,placeholder = "test/mirtop.gff",
                 accept = c(".gff")),
       #Botón de acción para lanzar la aplicación.
       actionButton("upload", "Upload Data")
