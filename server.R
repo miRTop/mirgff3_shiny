@@ -116,5 +116,9 @@ shinyServer(function(input, output) {
       filas4 = input$tabla4_rows_selected
       rowData(se[filas4])
     })
+     output$graph <- renderPlot({
+      filas5 = input$tabla4_rows_selected
+      degPlot(se,genes = rownames(se)[filas5], xs = colnames(metadata),log2 = FALSE)
+    })
   })
 })
