@@ -1,7 +1,4 @@
 
-if (!requireNamespace("BiocManager", quietly = TRUE))
-install.packages("BiocManager")
-BiocManager::install(c("SummarizedExperiment","DESeq2","DEGreport"), version = "3.8")
 library(DESeq2)
 library(tidyverse)
 library(stringr)
@@ -10,6 +7,7 @@ library(purrrlyr)
 library(ggplot2)
 library(DEGreport)
 library(shiny)
+library(DT)
 shinyServer(function(input, output) {
   #Función reactiva que procesa el archivo GFF y CSV en un objeto de tipo Summarized Experiment
   dataInput <-reactive({
@@ -63,6 +61,8 @@ shinyServer(function(input, output) {
   })
   #Condicionamos la salida a que se haya pulsado el boton "upload"
   observeEvent(input$upload, {
+    #Definimos la variable "se" (summarizedExperiment) en esta sección para que puedan utilizarla el resto de funciones.
+    se<-dataInput()
     #Mostramos el contenido del objeto "contenido" que es un objeto SummarizedExperiment.
     output$contenido<- renderPrint({
       dataInput()
@@ -70,6 +70,51 @@ shinyServer(function(input, output) {
     #Mostramos el objeto "pca" que es una PCA del objeto SummarizedExperiment en blanco y negro.
     output$pca<- renderPlot({
       degPCA(assays(se)[[1]], metadata = colData(se), data = FALSE)
+    })
+    #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las filas.
+    output$tabla1<-DT::renderDataTable(assays(se)[["raw"]],server = FALSE )
+    #Creamos una variable de salida en forma de gráfico reactivo a las filas seleccionadas en la tabla pareja.
+    output$grafico1 = renderPlot({
+      #Input de filas seleccionadas
+      filas = input$tabla1_rows_selected
+      par(mar = c(4, 4, 1, .1))
+      #Grafico de los datos
+      plot(assays(se)[["raw"]])
+      if (length(filas)) points(cars[filas, , drop = FALSE], pch = 19, cex = 2)
+    })
+    #Creamos una variable de salida que es una tabla reactiva en la cual se seleccionarán las filas en la tabla actual.
+    output$tabla2<-DT::renderDataTable(assays(se)[["raw"]],server = FALSE )
+    #Creamos una variable de salida en forma de gráfico reactivo a todas las filas que aparecen en pantalla.
+    output$grafico2 = renderPlot({
+      raw1<-assays(se)[["raw"]]
+      #Input de filas en la pagina actual
+      filas1 = input$tabla2_rows_current
+      par(mar = c(4, 4, 1, .1))
+      #Grafico de los datos
+      plot(raw1, pch = 21)
+      if (length(filas1)) {
+        points(raw1[filas1, , drop = FALSE], pch = 19, cex = 2)
+      }
+       })
+    #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las columnas.
+    output$tabla3<-DT::renderDataTable(assays(se)[["raw"]],selection = list(target = 'column'),server = FALSE )
+    #Creamos una variable de salida en forma de gráfico reactivo a las columnas seleccionadas en la tabla pareja.
+    output$grafico3 = renderPlot({
+      #Input de columnas seleccionadas
+      columnas = input$tabla3_columns_selected
+      par(mar = c(4, 4, 1, .1))
+      #Grafico de los datos sin normalizar
+      plot(assays(se)[["raw"]])
+      #Seleccion de los puntos marcados por las columnas.
+      if (length(columnas)) points(cars[columnas, , drop = FALSE], pch = 19, cex = 2)
+    })
+    
+    #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las filas.
+    output$tabla4<-DT::renderDataTable(assays(se)[["raw"]],server = FALSE )
+    #Salida de información de los diferentes isómeros seleccionados
+    output$info <- renderPrint({
+      filas4 = input$tabla4_rows_selected
+      rowData(se[filas4])
     })
   })
 })
