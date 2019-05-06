@@ -1,7 +1,4 @@
 #Load all the necessary packages and libraries.
-if (!requireNamespace("BiocManager", quietly = TRUE))
-install.packages("BiocManager")
-BiocManager::install(c("SummarizedExperiment","DESeq2","DEGreport"), version = "3.8")
 library(DESeq2)
 library(tidyverse)
 library(stringr)
