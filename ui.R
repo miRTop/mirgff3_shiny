@@ -48,7 +48,7 @@ shinyUI(fluidPage(
                     ),
                     #Pestaña con una tabla de los datos y la capacidad de seleccionar la fila y obtener los datos de cada isomero.
                     tabPanel("Selector", DT::dataTableOutput("tabla4"),
-                             verbatimTextOutput("info"))
+                             verbatimTextOutput("info"),plotOutput("graph"))
 
         )
     )
