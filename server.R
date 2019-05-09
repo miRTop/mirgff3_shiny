@@ -8,7 +8,7 @@ library(ggplot2)
 library(DEGreport)
 library(shiny)
 library(DT)
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   #Función reactiva que procesa el archivo GFF y CSV en un objeto de tipo Summarized Experiment
   dataInput <-reactive({
     inFile1 <-input$file1
@@ -67,9 +67,16 @@ shinyServer(function(input, output) {
     output$contenido<- renderPrint({
       dataInput()
     })
-    #Mostramos el objeto "pca" que es una PCA del objeto SummarizedExperiment en blanco y negro.
+     #Mostramos el objeto "pca" que es una PCA del objeto SummarizedExperiment en blanco y negro.
     output$pca<- renderPlot({
-      degPCA(assays(se)[[1]], metadata = colData(se), data = FALSE)
+      #Blanco y negro
+      degPCA(assays(dataInput())[[1]], metadata = colData(se), data = FALSE)
+      #observeEvent(input$upload2, {
+      #  degPCA(assays(se)[[1]], metadata = colData(se), condition = input$datadrop, shape = input$datadrop, data = FALSE)
+      #})
+      #Diferenciado por color y forma
+      #metadata = colData(se)
+      #degPCA(assays(se)[[1]], metadata = colData(se), condition = input$datadrop, shape = input$datadrop, data = FALSE)
     })
     #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las filas.
     output$tabla1<-DT::renderDataTable(assays(se)[["raw"]],server = FALSE )
@@ -109,15 +116,18 @@ shinyServer(function(input, output) {
       if (length(columnas)) points(cars[columnas, , drop = FALSE], pch = 19, cex = 2)
     })
     
-    #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las filas.
-    output$tabla4<-DT::renderDataTable(assays(se)[["raw"]],server = FALSE )
-    #Salida de información de los diferentes isómeros seleccionados
-    output$info <- renderPrint({
-      filas4 = input$tabla4_rows_selected
-      rowData(se[filas4])
-    })
-     output$graph <- renderPlot({
-      filas5 = input$tabla4_rows_selected
+     #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las filas con la información de rowData y crear gráficos a partir de las lienas seleccionadas.
+    #Inicialmente convertimos rowData en un dataFrame para poder hacerlo una tabla ineractiva
+    rowdataDF<-as.data.frame(rowData(se))
+    #Creamos el output que es una tabla a partir de rowData con lineas seleccionables.
+    output$tabla4<-DT::renderDataTable(rowdataDF,server = FALSE )
+    #Creamos un output que son gráficos de los isomeros seleccionados.
+    output$graph <- renderPlot({
+      #Creamos la variable que almacenará las filas seleccionadas.
+      filas5 <-input$tabla4_rows_selected
+      #Creamos metadata a partir de la variable se
+      metadata = colData(se)
+      #Desarrollamos los gráficos de las filas seleccionadas.
       degPlot(se,genes = rownames(se)[filas5], xs = colnames(metadata),log2 = FALSE)
     })
   })
