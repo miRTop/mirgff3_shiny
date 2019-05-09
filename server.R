@@ -56,10 +56,18 @@ shinyServer(function(input, output, session) {
     attributes<-atributes_extract(inFile2$datapath)
     counts<-counts_extract(inFile2$datapath, colnames)
     metadata<-coldata_extract_csv(inFile1$datapath)
+    updateSelectInput(session, "datadrop", choices = colnames(metadata))
     se<-SummarizedExperiment(assays = list(raw = counts), colData = metadata, rowData = attributes)
     se
   })
   #Condicionamos la salida a que se haya pulsado el boton "upload"
+  observeEvent(input$upload2, {
+    se<-dataInput()
+    output$pca<- renderPlot({
+      degPCA(assays(se)[[1]], metadata = colData(se), condition = input$datadrop, data = FALSE)
+    })
+  })
+  
   observeEvent(input$upload, {
     #Definimos la variable "se" (summarizedExperiment) en esta sección para que puedan utilizarla el resto de funciones.
     se<-dataInput()
@@ -71,9 +79,6 @@ shinyServer(function(input, output, session) {
     output$pca<- renderPlot({
       #Blanco y negro
       degPCA(assays(dataInput())[[1]], metadata = colData(se), data = FALSE)
-      #observeEvent(input$upload2, {
-      #  degPCA(assays(se)[[1]], metadata = colData(se), condition = input$datadrop, shape = input$datadrop, data = FALSE)
-      #})
       #Diferenciado por color y forma
       #metadata = colData(se)
       #degPCA(assays(se)[[1]], metadata = colData(se), condition = input$datadrop, shape = input$datadrop, data = FALSE)
@@ -120,15 +125,18 @@ shinyServer(function(input, output, session) {
     #Inicialmente convertimos rowData en un dataFrame para poder hacerlo una tabla ineractiva
     rowdataDF<-as.data.frame(rowData(se))
     #Creamos el output que es una tabla a partir de rowData con lineas seleccionables.
-    output$tabla4<-DT::renderDataTable(rowdataDF,server = FALSE )
+    output$tabla4<-DT::renderDataTable(rowdataDF, server = FALSE )
     #Creamos un output que son gráficos de los isomeros seleccionados.
     output$graph <- renderPlot({
       #Creamos la variable que almacenará las filas seleccionadas.
       filas5 <-input$tabla4_rows_selected
       #Creamos metadata a partir de la variable se
-      metadata = colData(se)
       #Desarrollamos los gráficos de las filas seleccionadas.
-      degPlot(se,genes = rownames(se)[filas5], xs = colnames(metadata),log2 = FALSE)
+      if (!is.null(filas5)){
+        degPlot(se, genes = rownames(se)[filas5], slot = 1,
+                xs = input$datadrop, log2 = FALSE)
+        
+      }
     })
   })
 })
