@@ -9,6 +9,8 @@ library(DEGreport)
 library(shiny)
 library(DT)
 shinyUI(fluidPage(
+   #Tema de diseño
+  theme = shinytheme("united"),
   #Titulo de la aplicación
   titlePanel("mirGFF3 Reader"),
   #Disposición general del interface de la aplicación.
