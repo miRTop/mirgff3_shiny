@@ -35,7 +35,7 @@ shinyServer(function(input, output, session) {
       gff_table<-datos1 %>% 
         mutate(uid = str_extract(attribute,"iso-[0-9]+-\\w+;")) %>% # get the UID to have a unique self-identifier
         separate_rows(attribute, sep=";") %>%  # separate by row each element in attribute
-        mutate(attribute = trimws(attribute)) %>% # remove leading/tailing spaces
+        mutate(attribute = gsub("=", " ", trimws(attribute))) %>% # remove leading/tailing spaces
         separate(attribute, sep = " ", into = c("att", "value")) %>% # separate the values into two columns (UID | iso-22-LVMJ3KW9)
         spread(att, value) %>% # move name of the attributes to be columns
         select(-uid) # remove temporal ID
