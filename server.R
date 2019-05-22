@@ -57,6 +57,9 @@ shinyServer(function(input, output, session) {
     counts<-counts_extract(inFile2$datapath, colnames)
     metadata<-coldata_extract_csv(inFile1$datapath)
     updateSelectInput(session, "datadrop", choices = colnames(metadata))
+    keep <- rowSums(counts>0) > (ncol(counts) * 0.2)
+    attributes <- attributes[keep,]
+    counts <- counts[keep,]
     se<-SummarizedExperiment(assays = list(raw = counts), colData = metadata, rowData = attributes)
     se
   })
