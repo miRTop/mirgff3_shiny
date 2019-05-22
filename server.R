@@ -1,4 +1,5 @@
 
+library(shinythemes)
 library(DESeq2)
 library(tidyverse)
 library(stringr)
@@ -9,14 +10,17 @@ library(DEGreport)
 library(shiny)
 library(DT)
 shinyServer(function(input, output, session) {
-  #Función reactiva que procesa el archivo GFF y CSV en un objeto de tipo Summarized Experiment
+  #Función reactiva que procesa el archivo GFF y CSV en un objeto de tipo Summarized Experiment.
   dataInput <-reactive({
+    #Definimos las variables infile1 y 2 desde el menu de iu.
     inFile1 <-input$file1
     inFile2 <-input$file2
+    #Función que convierte el archivo mirGFF3 en un tibble.
     lecturaGFF <- function(gff){
       resultado<- as_tibble(read_tsv(gff, col_names = c("seqname","source","feature","start","end","score","strand","frame","attribute"), comment = "#"))
       return (resultado)
     } 
+    #Función que extrae la información presente en las primeras lineas del archivo mirGFF3
     coldata_extract <- function(gff_coldata) {
       primeras_lineas = readLines(gff_coldata, n = 3)
       coldata <- grep("COLDATA",primeras_lineas, value = TRUE)
@@ -24,10 +28,12 @@ shinyServer(function(input, output, session) {
       coldata3<-unlist(str_split(coldata2, ","))
       return(coldata3)
     }
+    #Función que extrae la información presente en el archivo CSV
     coldata_extract_csv <- function(csv){
       md_raw <- read.csv(csv, row.names = 1)
       return(md_raw)
     }
+    #Función que extrae la información perteneciente a las lineas del archivo mirGFF3
     atributes_extract<-function(gff){
       datos1<-lecturaGFF(gff)
       as_tibble(expresion <-datos1 %>% 
@@ -35,7 +41,8 @@ shinyServer(function(input, output, session) {
       gff_table<-datos1 %>% 
         mutate(uid = str_extract(attribute,"iso-[0-9]+-\\w+;")) %>% # get the UID to have a unique self-identifier
         separate_rows(attribute, sep=";") %>%  # separate by row each element in attribute
-        mutate(attribute = trimws(attribute)) %>% # remove leading/tailing spaces
+        #mutate(attribute = trimws(attribute)) %>% # remove leading/tailing spaces
+        mutate(attribute = gsub("=", " ", trimws(attribute))) %>% # remove leading/tailing spaces
         separate(attribute, sep = " ", into = c("att", "value")) %>% # separate the values into two columns (UID | iso-22-LVMJ3KW9)
         spread(att, value) %>% # move name of the attributes to be columns
         select(-uid) # remove temporal ID
@@ -57,85 +64,75 @@ shinyServer(function(input, output, session) {
     counts<-counts_extract(inFile2$datapath, colnames)
     metadata<-coldata_extract_csv(inFile1$datapath)
     updateSelectInput(session, "datadrop", choices = colnames(metadata))
-    se<-SummarizedExperiment(assays = list(raw = counts), colData = metadata, rowData = attributes)
+    keep <- rowSums(counts>0) > (ncol(counts) * 0.2)
+    attributes <- attributes[keep,]
+    counts <- counts[keep,]
+    se<-SummarizedExperiment(assays = list(raw = counts[,rownames(metadata)]),colData = metadata, rowData = attributes)
     se
   })
   #Condicionamos la salida a que se haya pulsado el boton "upload"
-  observeEvent(input$upload2, {
-    se<-dataInput()
-    output$pca<- renderPlot({
-      degPCA(assays(se)[[1]], metadata = colData(se), condition = input$datadrop, data = FALSE)
+  observeEvent(input$upload2,{
+    se<- dataInput()
+    output$pca<-renderPlot({
+      degPCA(assays(se)[[1]], metadata =colData(se), condition = input$datadrop, data=FALSE)
     })
   })
-  
   observeEvent(input$upload, {
     #Definimos la variable "se" (summarizedExperiment) en esta sección para que puedan utilizarla el resto de funciones.
     se<-dataInput()
+    dds<-DESeqDataSetFromMatrix(assays(dataInput())[[1]], colData(se),design = ~1)
+    vst <- varianceStabilizingTransformation(dds)
     #Mostramos el contenido del objeto "contenido" que es un objeto SummarizedExperiment.
-    output$contenido<- renderPrint({
-      dataInput()
+    output$contenido<- renderPrint({se
     })
-     #Mostramos el objeto "pca" que es una PCA del objeto SummarizedExperiment en blanco y negro.
+    #Mostramos el objeto "pca" que es una PCA del objeto SummarizedExperiment en blanco y negro.
     output$pca<- renderPlot({
       #Blanco y negro
       degPCA(assays(dataInput())[[1]], metadata = colData(se), data = FALSE)
-      #Diferenciado por color y forma
-      #metadata = colData(se)
-      #degPCA(assays(se)[[1]], metadata = colData(se), condition = input$datadrop, shape = input$datadrop, data = FALSE)
     })
-    #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las filas.
-    output$tabla1<-DT::renderDataTable(assays(se)[["raw"]],server = FALSE )
-    #Creamos una variable de salida en forma de gráfico reactivo a las filas seleccionadas en la tabla pareja.
-    output$grafico1 = renderPlot({
-      #Input de filas seleccionadas
-      filas = input$tabla1_rows_selected
-      par(mar = c(4, 4, 1, .1))
-      #Grafico de los datos
-      plot(assays(se)[["raw"]])
-      if (length(filas)) points(cars[filas, , drop = FALSE], pch = 19, cex = 2)
+    #Mostramos el encabezado de DESeqDataSetFromMatrix o de varianceStabilizingTransformation en caso de
+    #que la casilla este activada o no.
+    output$expresion<-renderPrint({
+      if (input$normalize) {vst} else {dds}
     })
-    #Creamos una variable de salida que es una tabla reactiva en la cual se seleccionarán las filas en la tabla actual.
-    output$tabla2<-DT::renderDataTable(assays(se)[["raw"]],server = FALSE )
-    #Creamos una variable de salida en forma de gráfico reactivo a todas las filas que aparecen en pantalla.
-    output$grafico2 = renderPlot({
-      raw1<-assays(se)[["raw"]]
-      #Input de filas en la pagina actual
-      filas1 = input$tabla2_rows_current
-      par(mar = c(4, 4, 1, .1))
-      #Grafico de los datos
-      plot(raw1, pch = 21)
-      if (length(filas1)) {
-        points(raw1[filas1, , drop = FALSE], pch = 19, cex = 2)
-      }
-       })
-    #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las columnas.
-    output$tabla3<-DT::renderDataTable(assays(se)[["raw"]],selection = list(target = 'column'),server = FALSE )
-    #Creamos una variable de salida en forma de gráfico reactivo a las columnas seleccionadas en la tabla pareja.
-    output$grafico3 = renderPlot({
-      #Input de columnas seleccionadas
-      columnas = input$tabla3_columns_selected
-      par(mar = c(4, 4, 1, .1))
-      #Grafico de los datos sin normalizar
-      plot(assays(se)[["raw"]])
-      #Seleccion de los puntos marcados por las columnas.
-      if (length(columnas)) points(cars[columnas, , drop = FALSE], pch = 19, cex = 2)
+    #Si se pulsa el botón de "Dispersion" mostramos los valores de dispersion
+    observeEvent(input$upload3, {
+      output$expresion2<-renderPrint({
+        dds<-DESeq(dds)
+        sizeFactors(dds)
+        res <- results(dds)
+        head(res)
+        #OPCIONAL, mostrarlo ordenado por p-valor
+        #resOrdered <- res[order(res$padj),]
+        #head(resOrdered)
+      })
+      #Si se pulsa el botón de "Grafico" mostramos el degPlot de los datos de dispersion.
+    observeEvent(input$upload4, {
+      output$expresion_plot<-renderPlot({
+        degPlot(vst, genes = rownames(vst)[1:12], xs = colnames(metadata), log2 = FALSE, slot = 1)
+      })
     })
-    
-     #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las filas con la información de rowData y crear gráficos a partir de las lienas seleccionadas.
+    #Si se pulsa el botón de "Grafico2" mostramos el MA plot de los datos de dispersion.
+    observeEvent(input$upload5, {
+      output$expresion_plot2<-renderPlot({
+        dds<-DESeq(dds)
+        sizeFactors(dds)
+        res <- results(dds)
+        plotMA(res, main="plot MA", ylim=c(-10,20))
+      })
+    })
+  })
+    #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las filas con la información de rowData y crear gráficos a partir de las lienas seleccionadas.
     #Inicialmente convertimos rowData en un dataFrame para poder hacerlo una tabla ineractiva
     rowdataDF<-as.data.frame(rowData(se))
     #Creamos el output que es una tabla a partir de rowData con lineas seleccionables.
-    output$tabla4<-DT::renderDataTable(rowdataDF, server = FALSE )
+    output$tabla4<-DT::renderDataTable(rowdataDF,server = TRUE )
     #Creamos un output que son gráficos de los isomeros seleccionados.
     output$graph <- renderPlot({
       #Creamos la variable que almacenará las filas seleccionadas.
       filas5 <-input$tabla4_rows_selected
-      #Creamos metadata a partir de la variable se
-      #Desarrollamos los gráficos de las filas seleccionadas.
-      if (!is.null(filas5)){
-        degPlot(se, genes = rownames(se)[filas5], slot = 1,
-                xs = input$datadrop, log2 = FALSE)
-        
+      if(!is.null(filas5)){
+        degPlot(se, genes = rownames(se)[filas5], slot = 1, xs = input$datadrop, log2 = FALSE)
       }
     })
   })
