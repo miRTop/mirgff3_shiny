@@ -60,7 +60,7 @@ shinyServer(function(input, output, session) {
     keep <- rowSums(counts>0) > (ncol(counts) * 0.2)
     attributes <- attributes[keep,]
     counts <- counts[keep,]
-    se<-SummarizedExperiment(assays = list(raw = counts), colData = metadata, rowData = attributes)
+    se<-SummarizedExperiment(assays = list(raw = counts[,rownames(metadata)]),colData = metadata, rowData = attributes)
     se
   })
   #Condicionamos la salida a que se haya pulsado el boton "upload"
