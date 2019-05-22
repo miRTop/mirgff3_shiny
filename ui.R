@@ -9,15 +9,15 @@ library(DEGreport)
 library(shiny)
 library(DT)
 shinyUI(fluidPage(
-   #Tema de diseño
-  theme = shinytheme("united"),
+  #Añadimos el tema de la aplicación
+  theme = shinytheme("simplex"),
   #Titulo de la aplicación
   titlePanel("mirGFF3 Reader"),
   #Disposición general del interface de la aplicación.
   sidebarLayout(
-    #Disposición del panel lateral.
+    #Panel lateral.
     sidebarPanel(
-      #Menú para cargar el arhivo GFF y CSV.
+      #Menú para cargar el archivo mirGFF3 y CSV.
       fileInput("file1", "Choose CSV File",
                 multiple = FALSE,placeholder = "test/metadata.csv",
                 accept = c("text/csv",
@@ -38,28 +38,33 @@ shinyUI(fluidPage(
                     #Pestaña con la PCA sin colorear
                     tabPanel("PCA", plotOutput("pca"),
                              #Menu desplegable con las filas de metadata
-                             selectInput("datadrop","metadata", choices = colnames(metadata)),
-                             #Botón de acción para 
-                             actionButton("upload2", "Upload Data")
+                             selectInput("datadrop","metadata", choices = ""),
+                             #Botón de acción para confirmar la elección de la columna de metadata.
+                             actionButton("upload2", "Render Plot")
                              ),
-                    #Pestaña con la tabla de isomeros y un gráfico con los mismos donde podemos seleccionar las filas a destacar.
-                    tabPanel("Prueba", fluidRow(column(6, DT::dataTableOutput("tabla1")),
-                                               column(6, plotOutput("grafico1"))
-                                                )
-                    ),
-                    #Pestaña con la tabla de ismoeros y un gráfico con los mismos donde se destacan los que aparecen en la tabla actual.
-                    tabPanel("Prueba2", fluidRow(column(6, DT::dataTableOutput("tabla2")),
-                                                column(6, plotOutput("grafico2"))
-                                                )
-                    ),
-                    #Pestaña con la tabla de isomeros y un gráficos de los mismos donde podemos seleccionar los que aparecen en pantalla por columnas.
-                    tabPanel("Prueba3", fluidRow(column(6, DT::dataTableOutput("tabla3")),
-                                                 column(6, plotOutput("grafico3"))
-                                                )
-                    ),
                     #Pestaña con una tabla de los datos y la capacidad de seleccionar la fila y obtener los datos de cada isomero.
                     tabPanel("Selector", DT::dataTableOutput("tabla4"),
-                             verbatimTextOutput("info"),plotOutput("graph"))
+                             verbatimTextOutput("info"),plotOutput("graph")),
+                    #Pestaña con información sobre expresión diferencial
+                    tabPanel("Differential Expression", 
+                             #Casilla activada por defecto que selecciona la normalización o no de los datos
+                             checkboxInput(inputId = "normalize",
+                                           label = strong("Data normalization"),
+                                           value = TRUE),
+                             #Encabezado de DESeqDataSet normalizado (varianceStabilizingTransformation) o no.
+                             verbatimTextOutput("expresion"), 
+                             hr(),
+                             #Botón que permite mostrar los valores de dispersion.
+                             actionButton("upload3", "Dispersion"),
+                             verbatimTextOutput("expresion2"),
+                             hr(),
+                             #Boton que permite mostrar el DEGplot de los 12 primeros isomiR.
+                             actionButton("upload4", "Grafico"),
+                             plotOutput("expresion_plot"),
+                             #Boton que permite mostrar el MA-Plot.
+                             actionButton("upload5", "Grafico2"),
+                             plotOutput("expresion_plot2")
+                             )
 
         )
     )
