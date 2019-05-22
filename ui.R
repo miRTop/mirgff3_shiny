@@ -38,7 +38,7 @@ shinyUI(fluidPage(
                     #Pestaña con la PCA sin colorear
                     tabPanel("PCA", plotOutput("pca"),
                              #Menu desplegable con las filas de metadata
-                             selectInput("datadrop","metadata", choices = colnames(metadata)),
+                             selectInput("datadrop","metadata", choices = ""),
                              #Botón de acción para 
                              actionButton("upload2", "Render plot")
                              ),
