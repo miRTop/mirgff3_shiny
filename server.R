@@ -82,48 +82,7 @@ shinyServer(function(input, output, session) {
     output$pca<- renderPlot({
       #Blanco y negro
       degPCA(assays(dataInput())[[1]], metadata = colData(se), data = FALSE)
-      #Diferenciado por color y forma
-      #metadata = colData(se)
-      #degPCA(assays(se)[[1]], metadata = colData(se), condition = input$datadrop, shape = input$datadrop, data = FALSE)
     })
-    #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las filas.
-    output$tabla1<-DT::renderDataTable(assays(se)[["raw"]],server = FALSE )
-    #Creamos una variable de salida en forma de gráfico reactivo a las filas seleccionadas en la tabla pareja.
-    output$grafico1 = renderPlot({
-      #Input de filas seleccionadas
-      filas = input$tabla1_rows_selected
-      par(mar = c(4, 4, 1, .1))
-      #Grafico de los datos
-      plot(assays(se)[["raw"]])
-      if (length(filas)) points(cars[filas, , drop = FALSE], pch = 19, cex = 2)
-    })
-    #Creamos una variable de salida que es una tabla reactiva en la cual se seleccionarán las filas en la tabla actual.
-    output$tabla2<-DT::renderDataTable(assays(se)[["raw"]],server = FALSE )
-    #Creamos una variable de salida en forma de gráfico reactivo a todas las filas que aparecen en pantalla.
-    output$grafico2 = renderPlot({
-      raw1<-assays(se)[["raw"]]
-      #Input de filas en la pagina actual
-      filas1 = input$tabla2_rows_current
-      par(mar = c(4, 4, 1, .1))
-      #Grafico de los datos
-      plot(raw1, pch = 21)
-      if (length(filas1)) {
-        points(raw1[filas1, , drop = FALSE], pch = 19, cex = 2)
-      }
-       })
-    #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las columnas.
-    output$tabla3<-DT::renderDataTable(assays(se)[["raw"]],selection = list(target = 'column'),server = FALSE )
-    #Creamos una variable de salida en forma de gráfico reactivo a las columnas seleccionadas en la tabla pareja.
-    output$grafico3 = renderPlot({
-      #Input de columnas seleccionadas
-      columnas = input$tabla3_columns_selected
-      par(mar = c(4, 4, 1, .1))
-      #Grafico de los datos sin normalizar
-      plot(assays(se)[["raw"]])
-      #Seleccion de los puntos marcados por las columnas.
-      if (length(columnas)) points(cars[columnas, , drop = FALSE], pch = 19, cex = 2)
-    })
-    
      #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las filas con la información de rowData y crear gráficos a partir de las lienas seleccionadas.
     #Inicialmente convertimos rowData en un dataFrame para poder hacerlo una tabla ineractiva
     rowdataDF<-as.data.frame(rowData(se))
