@@ -40,7 +40,7 @@ shinyUI(fluidPage(
                              #Menu desplegable con las filas de metadata
                              selectInput("datadrop","metadata", choices = colnames(metadata)),
                              #Botón de acción para 
-                             actionButton("upload2", "Upload Data")
+                             actionButton("upload2", "Render plot")
                              ),
                     #Pestaña con la tabla de isomeros y un gráfico con los mismos donde podemos seleccionar las filas a destacar.
                     tabPanel("Prueba", fluidRow(column(6, DT::dataTableOutput("tabla1")),
