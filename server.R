@@ -56,30 +56,35 @@ shinyServer(function(input, output, session) {
         }
         withProgress(message = 'Calculating',
                      detail = 'Hold your horses...', value = 0, {
-                         for (i in 1:15) {
-                             incProgress(1/15)
-                             sum(runif(10000000,0,1))
+                         n <- 7
+                         incProgress(1/n, detail = paste("Reading coldata"))
+                         
+                         colnames<- coldata_extract(inFile2$datapath)
+                         incProgress(1/n, detail = paste("Reading coldata"))
+                         attributes<-atributes_extract(inFile2$datapath)
+                         incProgress(1/n, detail = paste("Reading counts"))
+                         counts<-counts_extract(inFile2$datapath, colnames)
+                         incProgress(1/n, detail = paste("Reading metadata"))
+                         metadata<-coldata_extract_csv(inFile1$datapath)
+                         updateSelectInput(session, "datadrop", choices = colnames(metadata))
+                         incProgress(1/n, detail = paste("Creating object"))
+                         keep <- rowSums(counts>0) > (ncol(counts) * 0.2)
+                         attributes <- attributes[keep,]
+                         counts <- counts[keep,]
+                         se<-SummarizedExperiment(assays = list(raw = counts[,rownames(metadata)]),colData = metadata, rowData = attributes)
+                         good_samples <- colSums(assays(se)[[1]]>0) > 50
+                         se <- se[,good_samples]
+                         dds<-DESeqDataSetFromMatrix(assays(se)[[1]], colData(se),design = ~1)
+                         incProgress(1/n, detail = paste("Normalizing"))
+                         vst <- varianceStabilizingTransformation(dds)
+                         assays(se)[["vst"]] <- assay(vst)
+                         if(input$normalize) {
+                             assays(se)[["use"]] <- assays(se)[["vst"]]
+                         }else{
+                             assays(se)[["use"]] <- assays(se)[["raw"]]
                          }
-        colnames<- coldata_extract(inFile2$datapath)
-        attributes<-atributes_extract(inFile2$datapath)
-        counts<-counts_extract(inFile2$datapath, colnames)
-        metadata<-coldata_extract_csv(inFile1$datapath)
-        updateSelectInput(session, "datadrop", choices = colnames(metadata))
-        keep <- rowSums(counts>0) > (ncol(counts) * 0.2)
-        attributes <- attributes[keep,]
-        counts <- counts[keep,]
-        se<-SummarizedExperiment(assays = list(raw = counts[,rownames(metadata)]),colData = metadata, rowData = attributes)
-        good_samples <- colSums(assays(se)[[1]]>0) > 50
-        se <- se[,good_samples]
-        dds<-DESeqDataSetFromMatrix(assays(se)[[1]], colData(se),design = ~1)
-        vst <- varianceStabilizingTransformation(dds)
-        assays(se)[["vst"]] <- assay(vst)
-        if(input$normalize) {
-          assays(se)[["use"]] <- assays(se)[["vst"]]
-        }else{
-          assays(se)[["use"]] <- assays(se)[["raw"]]
-        }
-                          })
+                         incProgress(1/n, detail = paste("Done"))
+                     })
         se
         
     })
