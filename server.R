@@ -67,7 +67,10 @@ shinyServer(function(input, output, session) {
     keep <- rowSums(counts>0) > (ncol(counts) * 0.2)
     attributes <- attributes[keep,]
     counts <- counts[keep,]
-    se<-SummarizedExperiment(assays = list(raw = counts[,rownames(metadata)]),colData = metadata, rowData = attributes)
+    se1<-SummarizedExperiment(assays = list(raw = counts[,rownames(metadata)]),colData = metadata, rowData = attributes)
+    dds<-DESeqDataSetFromMatrix(counts[,rownames(metadata)], metadata,design = ~1)
+    vst <- varianceStabilizingTransformation(dds)
+    if(input$normalize) {se<-vst} else{se<-se1}
     se
   })
   #Condicionamos la salida a que se haya pulsado el boton "upload"
@@ -80,8 +83,6 @@ shinyServer(function(input, output, session) {
   observeEvent(input$upload, {
     #Definimos la variable "se" (summarizedExperiment) en esta sección para que puedan utilizarla el resto de funciones.
     se<-dataInput()
-    dds<-DESeqDataSetFromMatrix(assays(dataInput())[[1]], colData(se),design = ~1)
-    vst <- varianceStabilizingTransformation(dds)
     #Mostramos el contenido del objeto "contenido" que es un objeto SummarizedExperiment.
     output$contenido<- renderPrint({se
     })
