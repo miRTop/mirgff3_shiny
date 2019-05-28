@@ -54,6 +54,12 @@ shinyServer(function(input, output, session) {
                 column_to_rownames("UID") %>%
                 as.matrix()
         }
+        withProgress(message = 'Calculating',
+                     detail = 'Hold your horses...', value = 0, {
+                         for (i in 1:15) {
+                             incProgress(1/15)
+                             sum(runif(10000000,0,1))
+                         }
         colnames<- coldata_extract(inFile2$datapath)
         attributes<-atributes_extract(inFile2$datapath)
         counts<-counts_extract(inFile2$datapath, colnames)
@@ -73,6 +79,7 @@ shinyServer(function(input, output, session) {
         }else{
           assays(se)[["use"]] <- assays(se)[["raw"]]
         }
+                          })
         se
         
     })
