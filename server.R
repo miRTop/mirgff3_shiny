@@ -62,10 +62,17 @@ shinyServer(function(input, output, session) {
         keep <- rowSums(counts>0) > (ncol(counts) * 0.2)
         attributes <- attributes[keep,]
         counts <- counts[keep,]
-        se1<-SummarizedExperiment(assays = list(raw = counts[,rownames(metadata)]),colData = metadata, rowData = attributes)
-        dds<-DESeqDataSetFromMatrix(counts[,rownames(metadata)], metadata,design = ~1)
+        se<-SummarizedExperiment(assays = list(raw = counts[,rownames(metadata)]),colData = metadata, rowData = attributes)
+        good_samples <- colSums(assays(se)[[1]]>0) > 50
+        se <- se[,good_samples]
+        dds<-DESeqDataSetFromMatrix(assays(se)[[1]], colData(se),design = ~1)
         vst <- varianceStabilizingTransformation(dds)
-        if(input$normalize) {se<-vst} else{se<-se1}
+        assays(se)[["vst"]] <- assay(vst)
+        if(input$normalize) {
+          assays(se)[["use"]] <- assays(se)[["vst"]]
+        }else{
+          assays(se)[["use"]] <- assays(se)[["raw"]]
+        }
         se
         
     })
@@ -73,7 +80,7 @@ shinyServer(function(input, output, session) {
     observeEvent(input$upload2, {
         se<-dataInput()
         output$pca<- renderPlot({
-            degPCA(assays(se)[[1]], metadata = colData(se), condition = input$datadrop, data = FALSE)
+            degPCA(assays(se)[["use"]], metadata = colData(se), condition = input$datadrop, data = FALSE)
         })
     })
     
@@ -87,13 +94,14 @@ shinyServer(function(input, output, session) {
         #Mostramos el objeto "pca" que es una PCA del objeto SummarizedExperiment en blanco y negro.
         output$pca<- renderPlot({
             #Blanco y negro
-            degPCA(assays(dataInput())[[1]], metadata = colData(se), data = FALSE)
+            degPCA(assays(dataInput())[["use"]], metadata = colData(se), data = FALSE)
         })
         #Creamos una variable de salida que es una tabla reactiva en la cual podemos seleccionar las filas con la información de rowData y crear gráficos a partir de las lienas seleccionadas.
         #Inicialmente convertimos rowData en un dataFrame para poder hacerlo una tabla ineractiva
         rowdataDF<-as.data.frame(rowData(se))
         #Creamos el output que es una tabla a partir de rowData con lineas seleccionables.
-        output$tabla4<-DT::renderDataTable(rowdataDF, server = FALSE )
+        output$tabla4<-DT::renderDataTable(rowdataDF, server = TRUE,
+                                          filter = 'top')
         #Creamos un output que son gráficos de los isomeros seleccionados.
         output$graph <- renderPlot({
             #Creamos la variable que almacenará las filas seleccionadas.
@@ -101,7 +109,7 @@ shinyServer(function(input, output, session) {
             #Creamos metadata a partir de la variable se
             #Desarrollamos los gráficos de las filas seleccionadas.
             if (!is.null(filas5)){
-                degPlot(se, genes = rownames(se)[filas5], slot = 1,
+                degPlot(se, genes = rownames(se)[filas5], slot = "use",
                         xs = input$datadrop, log2 = FALSE)
                 
             }
