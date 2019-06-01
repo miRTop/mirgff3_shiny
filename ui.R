@@ -55,7 +55,7 @@ shinyUI(fluidPage(
                                  actionButton("upload3", "Load design"),
                                  hr(),
                                  selectInput("datadrop2","Metadata", choices = ""),
-                                 actionButton("upload4", "DDS graph"),
+                                 actionButton("upload4", "VST graph"),
                                  plotOutput("graph2")
                         )
                         
