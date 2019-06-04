@@ -88,15 +88,6 @@ shinyServer(function(input, output, session) {
         se
         
     })
-    observeEvent(input$upload3, {
-        dds2<-DESeq(dds)
-        updateSelectInput(session, "datadrop2", choices = resultsNames(dds2) )
-    })
-    observeEvent(input$upload4, {
-        output$graph2<- renderPlot({
-            plotPCA(vst, intgroup = datadrop2)
-        })
-    })
     #Condicionamos la salida a que se haya pulsado el boton "upload"
     observeEvent(input$upload2, {
         se<-dataInput()
@@ -133,16 +124,6 @@ shinyServer(function(input, output, session) {
                 degPlot(se, genes = rownames(se)[filas5], slot = "use",
                         xs = input$datadrop, log2 = FALSE)
                 
-            }
-        })
-         output$graph2 <- renderPlot({
-            #Creamos la variable que almacenará las filas seleccionadas.
-            filas6 <-input$tabla5_rows_selected
-            #Creamos metadata a partir de la variable se
-            #Desarrollamos los gráficos de las filas seleccionadas.
-            if (!is.null(filas6)){
-                degPlot(se, genes = rownames(se)[filas5], slot = "use",
-                        xs = input$datadrop, log2 = FALSE)
             }
         })
     })
