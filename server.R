@@ -126,5 +126,14 @@ shinyServer(function(input, output, session) {
                 
             }
         })
+        observeEvent(input$upload3, {
+            dds2<-DESeq(dds)
+            updateSelectInput(session, "datadrop2", choices = resultsNames(dds2) )
+        })
+        observeEvent(input$upload4, {
+            output$graph2<- renderPlot({
+                plotPCA(vst, intgroup = "datadrop2")
+            })
+        })
     })
 })
