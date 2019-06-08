@@ -8,6 +8,7 @@ library(ggplot2)
 library(DEGreport)
 library(shiny)
 library(DT)
+library(shinythemes)
 shinyUI(fluidPage(
     #Tema de diseño
     theme = shinytheme("united"),
