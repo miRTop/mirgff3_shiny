@@ -59,6 +59,13 @@ shinyUI(fluidPage(
                                  actionButton("upload4", "DDS graph"),
                                  plotOutput("graph2")
                                  )
+                          tabPanel("Differential Expression",
+                                 hr(),
+                                 textInput("formula1", "Enter design"),
+                                 p("Type the formula for your differential expression analysis"),
+                                 actionButton("upload3", "Load design"),
+                                 selectInput("datadrop2","metadata2", choices = "")
+                        )
                         
             )
         )
