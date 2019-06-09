@@ -88,6 +88,21 @@ shinyServer(function(input, output, session) {
         se
         
     })
+    
+     dataInput2<-reactive({
+        se<-dataInput()
+        fun<-function(x) {eval(parse(text=input$formula1))}
+        dds<-DESeqDataSetFromMatrix(assays(se)[["raw"]], colData(se),design = fun())
+        dds<-DESeq(dds)
+        res<-results(dds)
+        res
+        })
+    #Apps that do this are not safe to deploy on a server because a user could feed in whatever code they want, for example system("rm -rf ~")
+    observeEvent(input$upload3, {
+        entrada<-dataInput2()
+        listado<-as.data.frame(entrada )
+        updateSelectInput(session, "datadrop2", choices = listado)
+  })
     #Condicionamos la salida a que se haya pulsado el boton "upload"
     observeEvent(input$upload2, {
         se<-dataInput()
