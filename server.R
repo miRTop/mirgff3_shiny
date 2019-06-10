@@ -94,15 +94,35 @@ shinyServer(function(input, output, session) {
         fun<-function(x) {eval(parse(text=input$formula1))}
         dds<-DESeqDataSetFromMatrix(assays(se)[["raw"]], colData(se),design = fun())
         dds<-DESeq(dds)
-        res<-results(dds)
-        res
+        dds
         })
     #Apps that do this are not safe to deploy on a server because a user could feed in whatever code they want, for example system("rm -rf ~")
     observeEvent(input$upload3, {
-        entrada<-dataInput2()
-        listado<-as.data.frame(entrada )
-        updateSelectInput(session, "datadrop2", choices = listado)
+        dds<-dataInput2()
+        updateSelectInput(session, "datadrop2", choices = resultsNames(dds))
+
+        
   })
+    observeEvent(input$upload4, {
+        dds<-dataInput2()
+        se<-dataInput()
+        res <- data.frame(results(dds, name=input$datadrop2))
+        res <- rownames_to_column(res, "UID") %>% 
+            left_join(as.data.frame(rowData(se)), by = "UID") 
+        output$tabla5 <- renderDataTable(res,
+                                         server = TRUE,
+                                         filter = 'top')
+        output$graph2<- renderPlot({
+            filas <-input$tabla5_rows_selected
+            #Creamos metadata a partir de la variable se
+            #Desarrollamos los gráficos de las filas seleccionadas.
+            if (!is.null(filas)){
+                degPlot(se, genes = rownames(se)[filas], slot = "use",
+                        xs = input$datadrop, log2 = FALSE)
+
+            }
+        })
+    })
     #Condicionamos la salida a que se haya pulsado el boton "upload"
     observeEvent(input$upload2, {
         se<-dataInput()
@@ -141,14 +161,6 @@ shinyServer(function(input, output, session) {
                 
             }
         })
-        observeEvent(input$upload3, {
-            dds2<-DESeq(dds)
-            updateSelectInput(session, "datadrop2", choices = resultsNames(dds2) )
-        })
-        observeEvent(input$upload4, {
-            output$graph2<- renderPlot({
-                plotPCA(vst, intgroup = "datadrop2")
-            })
-        })
+        
     })
 })
