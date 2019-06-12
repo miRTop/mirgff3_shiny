@@ -48,7 +48,20 @@ shinyUI(fluidPage(
                         ),
                         #Pestaña con una tabla de los datos y la capacidad de seleccionar la fila y obtener los datos de cada isomero.
                         tabPanel("Selector", DT::dataTableOutput("tabla4"),
-                                 verbatimTextOutput("info"),plotOutput("graph"))
+                                 verbatimTextOutput("info"),plotOutput("graph")),
+                        
+                        tabPanel("Differential Expression",
+                                 hr(),
+                                 textInput("formula1", "Enter design", placeholder = "~group"),
+                                 p("Type the formula for your differential expression analysis"),
+                                 actionButton("upload3", "Do Differential Expression"),
+                                 hr(),
+                                 selectInput("datadrop2", "Metadata", choices = ""),
+                                 actionButton("upload4", "Show results"),
+                                 DT::dataTableOutput("tabla5"),
+                                 plotOutput("graph2")
+                        )
+                                
                         
             )
         )
