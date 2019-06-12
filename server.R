@@ -26,9 +26,9 @@ shinyServer(function(input, output, session) {
             coldata3<-unlist(str_split(coldata2, ","))
             return(coldata3)
         }
-            coldata_extract_csv <- function(csv){
-                md_raw <- read.csv(csv, row.names = 1)
-                return(md_raw)
+        coldata_extract_csv <- function(csv){
+            md_raw <- read.csv(csv, row.names = 1)
+            return(md_raw)
         }
         atributes_extract<-function(gff){
             datos1<-lecturaGFF(gff)
@@ -88,6 +88,39 @@ shinyServer(function(input, output, session) {
         se
         
     })
+    dataInput2<-reactive({
+        se<-dataInput()
+        fun<-function(x) {eval(parse(text=input$formula1))}
+        dds<-DESeqDataSetFromMatrix(assays(se)[["raw"]], colData(se),design = fun())
+        dds<-DESeq(dds)
+        dds
+        })
+    #Apps that do this are not safe to deploy on a server because a user could feed in whatever code they want, for example system("rm -rf ~")
+    observeEvent(input$upload3, {
+        dds<-dataInput2()
+        updateSelectInput(session,"datadrop2",choices = resultsNames(dds))
+  })
+    observeEvent(input$upload4, {
+      dds<-dataInput2()
+      se<-dataInput()
+      res <- data.frame(results(dds, name=input$datadrop2))
+      res <- rownames_to_column(res, "UID") %>% 
+        left_join(as.data.frame(rowData(se)), by = "UID") 
+      output$tabla5 <- renderDataTable(res,
+                                       server = TRUE,
+                                       filter = 'top')
+      output$graph2<- renderPlot({
+        filas <-input$tabla5_rows_selected
+        #Creamos metadata a partir de la variable se
+        #Desarrollamos los gráficos de las filas seleccionadas.
+        if (!is.null(filas)){
+          degPlot(se, genes = rownames(se)[filas], slot = "use",
+                  xs = input$datadrop, log2 = FALSE)
+          
+        }
+      })
+    })
+    
     #Condicionamos la salida a que se haya pulsado el boton "upload"
     observeEvent(input$upload2, {
         se<-dataInput()
@@ -101,7 +134,7 @@ shinyServer(function(input, output, session) {
         se<-dataInput()
         #Mostramos el contenido del objeto "contenido" que es un objeto SummarizedExperiment.
         output$contenido<- renderPrint({
-           se
+            se
         })
         #Mostramos el objeto "pca" que es una PCA del objeto SummarizedExperiment en blanco y negro.
         output$pca<- renderPlot({
@@ -113,7 +146,7 @@ shinyServer(function(input, output, session) {
         rowdataDF<-as.data.frame(rowData(se))
         #Creamos el output que es una tabla a partir de rowData con lineas seleccionables.
         output$tabla4<-DT::renderDataTable(rowdataDF, server = TRUE,
-                                          filter = 'top')
+                                           filter = 'top')
         #Creamos un output que son gráficos de los isomeros seleccionados.
         output$graph <- renderPlot({
             #Creamos la variable que almacenará las filas seleccionadas.
@@ -126,5 +159,6 @@ shinyServer(function(input, output, session) {
                 
             }
         })
+        
     })
 })
